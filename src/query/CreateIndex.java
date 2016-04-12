@@ -52,7 +52,7 @@ class CreateIndex implements Plan {
 	Minibase.SystemCatalog.createIndex(fileName, tableName, columnName);
 	  
     // print the output message
-    System.out.println("(Not implemented)");
+    System.out.println("Index Created.");
 
   } // public void execute()
 
