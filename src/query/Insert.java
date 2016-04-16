@@ -11,6 +11,7 @@ import relop.Tuple;
  */
 class Insert implements Plan {
 
+	//fileName of the table
 	private String tableName;
 	
 	private Object[] values;
@@ -18,6 +19,8 @@ class Insert implements Plan {
 	private Schema schema;
 	
 	private HeapFile heapFile;
+	
+	private IndexDesc[] indexes;
 	
   /**
    * Optimizes the plan, given the parsed query.
@@ -43,9 +46,20 @@ class Insert implements Plan {
 		 Tuple tuple = new Tuple(schema);
 		 tuple.setAllFields(values);
 		 tuple.insertIntoFile(heapFile);
-
+		 
+		 indexes = Minibase.SystemCatalog.getIndexes(tableName);
+		 for (int i = 0; i < indexes.length; i++){
+			 IndexDesc tempIndexDesc = indexes[i];
+			 String columnName = tempIndexDesc.columnName;
+			 String tableName = tempIndexDesc.tableName;
+			 String indexName = tempIndexDesc.indexName;
+			 
+			 Minibase.SystemCatalog.dropIndex(indexName);
+			 Minibase.SystemCatalog.createIndex(indexName, tableName, columnName);
+		 }
+		 
     // print the output message
-    System.out.println("1 rows affected.");
+    System.out.println("1 row inserted.");
 
   } // public void execute()
 

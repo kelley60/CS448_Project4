@@ -1,12 +1,22 @@
 package query;
 
+import heap.HeapFile;
 import parser.AST_Update;
+import relop.Schema;
 
 /**
  * Execution plan for updating tuples.
  */
 class Update implements Plan {
 
+	private String tableName;
+	
+	private Object[] values;
+	
+	private Schema schema;
+	
+	private HeapFile heapFile;
+	
   /**
    * Optimizes the plan, given the parsed query.
    * 

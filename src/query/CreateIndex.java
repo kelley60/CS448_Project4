@@ -2,6 +2,7 @@ package query;
 
 import global.Minibase;
 import heap.HeapFile;
+import index.HashIndex;
 import parser.AST_CreateIndex;
 import parser.ParseException;
 import relop.Schema;
@@ -47,12 +48,12 @@ class CreateIndex implements Plan {
    */
   public void execute() {
 	  
-	new HeapFile(fileName);  
+	new HashIndex(fileName);  
 	  
 	Minibase.SystemCatalog.createIndex(fileName, tableName, columnName);
 	  
     // print the output message
-    System.out.println("Index Created.");
+    System.out.println("Index created.");
 
   } // public void execute()
 
