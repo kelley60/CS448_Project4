@@ -4,6 +4,7 @@ import global.Minibase;
 import heap.HeapFile;
 import parser.AST_Insert;
 import relop.Schema;
+import relop.Tuple;
 
 /**
  * Execution plan for inserting tuples.
@@ -29,6 +30,7 @@ class Insert implements Plan {
 	  schema = QueryCheck.tableExists(tableName);
 	  values = tree.getValues();
 	  QueryCheck.insertValues(schema, values);
+	  //heapfile that has table that needs to have values inserted
 	  heapFile = new HeapFile(tableName);
 
   } // public Insert(AST_Insert tree) throws QueryException
@@ -38,9 +40,9 @@ class Insert implements Plan {
    */
   public void execute() {
 	  
-	 for (int i = 0; i < values.length; i++){
-		 heapFile.insertRecord((byte[]) values[i]);
-	 }
+		 Tuple tuple = new Tuple(schema);
+		 tuple.setAllFields(values);
+		 tuple.insertIntoFile(heapFile);
 
     // print the output message
     System.out.println("1 rows affected.");
