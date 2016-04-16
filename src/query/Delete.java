@@ -23,6 +23,8 @@ class Delete implements Plan {
 	private Schema schema;
 	private HeapFile heapFile;
 	private int length;
+	
+	private IndexDesc[] indexes;
 
   /**
    * Optimizes the plan, given the parsed query.
@@ -65,28 +67,24 @@ class Delete implements Plan {
 		  if(pass == true){
 			  RID rid = scan.getLastRID();
 			  heapFile.deleteRecord(rid);
-			  //need to also drop it from the catalog
-			  //Minibase.SystemCatalog.
-			  
 		  }
 	  }
 	  
-	  
-	  
-	  
-	  //at this point we should have a the tuples that match the predicates
-	  //delete these tuples
-	  
-
-	  
-	  
-	  	
-	  
-	  
-	  
+	  //need to also drop it from the catalog (Recreate the indexes)
+		 indexes = Minibase.SystemCatalog.getIndexes(tableName);
+		 for (int i = 0; i < indexes.length; i++){
+			 IndexDesc tempIndexDesc = indexes[i];
+			 String columnName = tempIndexDesc.columnName;
+			 String tableName = tempIndexDesc.tableName;
+			 String indexName = tempIndexDesc.indexName;
+			 
+			 Minibase.SystemCatalog.dropIndex(indexName);
+			 Minibase.SystemCatalog.createIndex(indexName, tableName, columnName);
+		 }
+	    
 	  
     // print the output message
-    System.out.println("0 rows affected. (Not implemented)");
+    System.out.println("Row(s) deleted.");
 
   } // public void execute()
 
