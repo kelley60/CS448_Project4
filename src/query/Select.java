@@ -30,7 +30,8 @@ class Select implements Plan {
 	static protected ArrayList<Iterator> selList;
 	static protected ArrayList<Iterator> joinList;
 	static protected ArrayList<Iterator> tableList;
-		protected Projection root;
+	protected Iterator root;
+
 
   /**
    * Optimizes the plan, given the parsed query.
@@ -46,12 +47,16 @@ class Select implements Plan {
 	String[] tables = tree.getTables(); 
 	//THIS AS WELL
 	Predicate[][] pred = tree.getPredicates();
-	//QueryCheck.predicates(schema, pred);
+	//
 	 
 	String[] cols = tree.getColumns();
-	//for(int i = 0; i < cols.length; i++){
-	//	fldnos[i]= QueryCheck.columnExists(schema, cols[i]);
-	//}
+	
+	System.out.println("The number of columns is " + cols.length);
+	
+	this.fldnos = new Integer[cols.length];
+	this.tableList = new ArrayList<Iterator>();
+	this.joinList = new ArrayList<Iterator>();
+	this.selList = new ArrayList<Iterator>();
 	
 	//tree.g
 	this.sortkeys = tree.getOrders();
@@ -69,7 +74,7 @@ class Select implements Plan {
 	
 	//get the tables
 	for(int i = 0; i < tables.length; i++){
-		Schema tempSchema = Minibase.SystemCatalog.getSchema(tables[i]);
+		System.out.print("getting table:" + i + "\n");
 		
 		//check if able to select
 		/*for(int j = 0; j < pred.length; j++){
@@ -87,6 +92,7 @@ class Select implements Plan {
 			}
 		}*/
 		HeapFile tempFile = new HeapFile(tables[i]);
+		Schema tempSchema = QueryCheck.tableExists(tables[i]);
 		FileScan temp = new FileScan(tempSchema, tempFile);
 		schemaList.add(tempSchema);
 		//tableJoinList.add(temp);
@@ -104,13 +110,17 @@ class Select implements Plan {
 	int count = 0;
 	ArrayList<Schema> joinSchema = new ArrayList<Schema>();
 	//Schema nSchema = new Schema(0);
-
+	System.out.println("Count is :" + count);
+	System.out.print("tableList size is :" + tableSize + "\n");
 	while(count < tableSize - 1){
 		if(beginJoin == false){
 			//join the first 2 tables together
-			SimpleJoin curJoin = new SimpleJoin(tableJoinList.get(0), tableJoinList.get(1));
+			System.out.print("joinList size:" + joinList.size() + "\n");
+			SimpleJoin curJoin = new SimpleJoin(tableList.get(0), tableList.get(1),pred[0]);
 			joinList.add(curJoin); // the first join
-			Schema nSchema = Schema.join(tableJoinList.get(0).getSchema(), tableJoinList.get(1).getSchema());
+			System.out.print("joinList size2:" + joinList.size() + "\n");
+			Schema nSchema = Schema.join(tableList.get(0).getSchema(), tableList.get(1).getSchema());
+			//nSchema.print();
 			joinSchema.add(nSchema);
 			beginJoin = true;
 			count++;
@@ -118,10 +128,12 @@ class Select implements Plan {
 		else{
 			//join the rest with the next table and the previous join iterator
 			//last schema on joinSchema List should be the final schema
+			System.out.print("joinList size2:" + joinList.size() + "\n");
 			SimpleJoin curJoin2 = new SimpleJoin(tableList.get(tableIndex), joinList.get(joinIndex));
 			joinList.add(curJoin2);
 			Schema nSchema2 = Schema.join(tableList.get(tableIndex).getSchema(), schemaList.get(joinIndex));
 			joinSchema.add(nSchema2);
+			nSchema2.print();
 			tableIndex++;
 			joinIndex++;
 			count++;
@@ -131,29 +143,70 @@ class Select implements Plan {
 	//select from the join
 	//ArrayList<Iterator> prevSel = new ArrayList<Iterator>();
 	
+	if(tableList.size() == 1){
+		joinSchema.add(tableList.get(0).getSchema());
+	}
 	int selCount;
 	boolean beginSel = false;
 	int prevSel = 0;
 	for(int i = 0; i < pred.length; i++){
 		if(beginSel == false){
 			//select using the last join
-			Selection tempSel = new Selection(joinList.get(joinList.size()-1),pred[i]);
-			selList.add(tempSel);
+			//System.out.print("joinList size:" + joinList.size() + "\n");
+			int joinSchemaLastIndex = joinSchema.size()-1;
+			System.out.println("Last index of join schema is " + joinSchemaLastIndex);
+			QueryCheck.predicates(joinSchema.get(joinSchemaLastIndex), pred);
+			if(tableList.size() != 1){
+				Selection tempSel = new Selection(joinList.get(joinList.size()-1),pred[i]);
+				selList.add(tempSel);
+			}
+			else{
+				Selection tempSel = new Selection(tableList.get(0),pred[i]);
+				selList.add(tempSel);
+			}
 		}
 		else{
 			//use the previous selects to create the next join
 			Selection tempSel2 = new Selection(selList.get(prevSel),pred[i]);
+			QueryCheck.predicates(joinSchema.get(joinSchema.size()-1), pred);
 			selList.add(tempSel2);
 			prevSel++;
 		}
 	}
+	System.out.print("selList size:" + selList.size() + "\n");
 	
 	//finally project with the last selection of the list
 	
 	for(int i = 0; i < cols.length; i++){
 		fldnos[i] = QueryCheck.columnExists(joinSchema.get(joinSchema.size()-1), cols[i]);
 	}
-	this.root = new Projection(selList.get(selList.size()-1),fldnos);
+	
+	//mutiple tables and SELECT *
+	if (tableList.size() > 1 && cols.length == 0){
+		
+		
+		Schema lastSchema = joinSchema.get(joinSchema.size() - 1);
+		int lastSchemaFieldCount = lastSchema.getCount();
+		
+		this.fldnos = new Integer[lastSchemaFieldCount];
+		
+		System.out.println("Number of columns in the last schema is " + lastSchemaFieldCount);
+		for(int i = 0; i < lastSchemaFieldCount; i++){
+			fldnos[i] = QueryCheck.columnExists(lastSchema, lastSchema.fieldName(i));
+		}
+	}
+	
+	if(cols.length == 0 && pred.length == 0){
+		this.root = tableList.get(0);
+	}
+	else if(selList.size() == 0){
+		this.root = new Projection(tableList.get(0),fldnos);
+	}
+	else{
+		System.out.print("projecting\n");
+		this.root = new Projection(selList.get(selList.size()-1),fldnos);
+	}
+	
 	
 	
 	
@@ -166,7 +219,6 @@ class Select implements Plan {
   public void execute() {
     // print the output message
 	  root.execute();
-	  System.out.println("0 rows affected. (Not implemented)");
     
   } // public void execute()
 
