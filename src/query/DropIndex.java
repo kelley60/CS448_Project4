@@ -9,8 +9,6 @@ import parser.AST_DropIndex;
  */
 class DropIndex implements Plan {
 	
-	//AST_DropIndex tree;
-	//AST_DropTable table;
 	private String fileName;
 
   /**
@@ -19,9 +17,7 @@ class DropIndex implements Plan {
    * @throws QueryException if index doesn't exist
    */
   public DropIndex(AST_DropIndex tree) throws QueryException {
-	//this.tree = tree;
-	//tree.jjtOpen();
-	  fileName = tree.getFileName();
+	  this.fileName = tree.getFileName();
 	  QueryCheck.indexExists(fileName);
 	//public DropIndex(AST_DropIndex tree) throws QueryException
   }  

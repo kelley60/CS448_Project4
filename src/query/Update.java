@@ -46,7 +46,6 @@ class Update implements Plan {
 	  this.columns = tree.getColumns();  
 	  this.values = tree.getValues();
 	  
-	  QueryCheck.insertValues(schema, values); 
 	  QueryCheck.predicates(schema, pred);
 	  for (int i = 0; i < columns.length; i++){
 		  QueryCheck.columnExists(schema, columns[i]);
@@ -56,8 +55,8 @@ class Update implements Plan {
 	  for (int i = 0; i < columns.length; i++){
 		  fieldNumbers[i] = schema.fieldNumber(columns[i]);
 	  }
+	  
 	  QueryCheck.updateValues(schema, fieldNumbers, values);
-
 	  
   } // public Update(AST_Update tree) throws QueryException
 
@@ -95,6 +94,7 @@ class Update implements Plan {
 		  }
 	  }
 		 
+	  scan.close();
 	  
     // print the output message
     System.out.println("Row(s) updated.");

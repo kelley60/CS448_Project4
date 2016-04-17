@@ -37,8 +37,7 @@ class CreateIndex implements Plan {
 	    columnName = tree.getIxColumn();
 	    
 	    QueryCheck.fileNotExists(fileName);
-	    QueryCheck.indexExists(fileName);
-	    QueryCheck.columnExists(schema, tree.getIxColumn());
+	    QueryCheck.columnExists(schema, columnName);
 	  
 	  
   } // public CreateIndex(AST_CreateIndex tree) throws QueryException

@@ -70,6 +70,8 @@ class Delete implements Plan {
 		  }
 	  }
 	  
+	  scan.close();
+	  
 	  //need to also drop it from the catalog (Recreate the indexes)
 		 indexes = Minibase.SystemCatalog.getIndexes(tableName);
 		 for (int i = 0; i < indexes.length; i++){
