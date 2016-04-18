@@ -27,9 +27,13 @@ class Select implements Plan {
 	//protected String[] tables;
 	protected SortKey[] sortkeys;
 	protected HeapFile heapFile;
+	
 	static protected ArrayList<Iterator> selList;
 	static protected ArrayList<Iterator> joinList;
 	static protected ArrayList<Iterator> tableList;
+	static protected ArrayList<Iterator> tableJoinList;
+	static protected FileScan tempFileScan;
+	
 	static protected ArrayList<Predicate[]> predList;
 	protected Iterator root;
 	static protected String lastPredStart;
@@ -96,7 +100,7 @@ class Select implements Plan {
 	String[] cols = tree.getColumns();
 	
 	
-	System.out.println("The number of columns is " + cols.length);
+	//System.out.println("The number of columns is " + cols.length);
 	
 	this.fldnos = new Integer[cols.length];
 	this.tableList = new ArrayList<Iterator>();
@@ -117,10 +121,10 @@ class Select implements Plan {
 			
 		}
 	}
-	System.out.print("predList Size in beginning:" + predList.size() + "\n");
+	//System.out.print("predList Size in beginning:" + predList.size() + "\n");
 	//get selections
 	//ArrayList<Selection> selList = new ArrayList<Selection>();
-	ArrayList<Iterator> tableJoinList = new ArrayList<Iterator>();
+	tableJoinList = new ArrayList<Iterator>();
 	ArrayList<Schema> schemaList = new ArrayList<Schema>();
 	//Boolean canSelect = true;
 	
@@ -128,7 +132,7 @@ class Select implements Plan {
 	
 	//get the tables
 	for(int i = 0; i < tables.length; i++){
-		System.out.print("getting tableName:" + tables[i] + "\n");
+		//System.out.print("getting tableName:" + tables[i] + "\n");
 		
 		//check if able to select with one table;
 		
@@ -140,30 +144,30 @@ class Select implements Plan {
 			boolean canValidate = true;
 			//System.out.print("Start of j loop\n");
 			for(int k = 0; k < predList.get(j).length; k++){
-				System.out.print(predList.get(j)[k].toString() + "\n");
+				//System.out.print(predList.get(j)[k].toString() + "\n");
 				if(!predList.get(j)[k].validate(tempSchema)){
-					System.out.print("invalid\n");
+					//System.out.print("invalid\n");
 					canValidate = false;
 					//break;
 				}
-				System.out.print("next\n");
-				System.out.print("canvalid is "+ canValidate + "\n");
+				//System.out.print("next\n");
+				//System.out.print("canvalid is "+ canValidate + "\n");
 			}
 			if(canValidate == true){
-				System.out.print("PredsFound\n");
-				FileScan temp = new FileScan(tempSchema, tempFile);
-				Selection tabSelect = new Selection(temp,predList.get(j));
+				//System.out.print("PredsFound\n");
+				tempFileScan = new FileScan(tempSchema, tempFile);
+				Selection tabSelect = new Selection(tempFileScan,predList.get(j));
 				schemaList.add(tempSchema);
 				tableList.add(tabSelect);
 				predList.remove(j);
-				System.out.print("Size of predList" + predList.size() + "\n" );
+				//System.out.print("Size of predList" + predList.size() + "\n" );
 				gotPred = true;
 				break;
 			}
 			
 		}
 		if(gotPred == false){
-			System.out.print("notPredsFound\n");
+			//System.out.print("notPredsFound\n");
 			FileScan temp = new FileScan(tempSchema, tempFile);
 			schemaList.add(tempSchema);
 			tableJoinList.add(temp);
@@ -171,10 +175,10 @@ class Select implements Plan {
 		}
 	}
 	if(predList.size() != 0){
-		System.out.print("predList not Empty at tables\n");
+		//System.out.print("predList not Empty at tables\n");
 		lastPredStart = "H";
 	}
-	System.out.print("Size of predList at the end of tables" + predList.size() + "\n" );
+	//System.out.print("Size of predList at the end of tables" + predList.size() + "\n" );
 	//cross join the tables together (for now)
 	//need to determine the order of the joins later
 
@@ -186,12 +190,12 @@ class Select implements Plan {
 	int count = 0;
 	ArrayList<Schema> joinSchema = new ArrayList<Schema>();
 	//Schema nSchema = new Schema(0);
-	System.out.println("Count is :" + count);
-	System.out.print("tableList size is :" + tableSize + "\n");
+	//System.out.println("Count is :" + count);
+	//System.out.print("tableList size is :" + tableSize + "\n");
 	while(count < tableSize - 1){
 		if(beginJoin == false){
 			//join the first 2 tables together
-			System.out.print("first loop join starting\n");
+			//System.out.print("first loop join starting\n");
 			Schema nSchema = Schema.join(tableList.get(0).getSchema(), tableList.get(1).getSchema());
 			boolean gotPred = false;
 			//check for predicats that can fit the joined schema and use it
@@ -203,10 +207,10 @@ class Select implements Plan {
 					}
 				}
 				if(canValidate == true){
-					System.out.print("PredsFound\n");
+					//System.out.print("PredsFound\n");
 					SimpleJoin curJoin = new SimpleJoin(tableList.get(0), tableList.get(1),predList.get(i));
 					joinList.add(curJoin); // the first join
-					System.out.print("joinList size2:" + joinList.size() + "\n");
+					//System.out.print("joinList size2:" + joinList.size() + "\n");
 					predList.remove(i);
 					joinSchema.add(nSchema);
 					beginJoin = true;
@@ -221,10 +225,10 @@ class Select implements Plan {
 				//QueryCheck.columnExists(nSchema, cols[i]);
 			//}
 			if(gotPred == false){
-				System.out.print("notPredsFound\n");
+				//System.out.print("notPredsFound\n");
 				SimpleJoin curJoin = new SimpleJoin(tableList.get(0), tableList.get(1));
 				joinList.add(curJoin); // the first join
-				System.out.print("joinList size2:" + joinList.size() + "\n");
+				//System.out.print("joinList size2:" + joinList.size() + "\n");
 			
 			//nSchema.print();
 				joinSchema.add(nSchema);
@@ -235,7 +239,7 @@ class Select implements Plan {
 		else{
 			//join the rest with the next table and the previous join iterator
 			//last schema on joinSchema List should be the final schema
-			System.out.print("joinList size2:" + joinList.size() + "\n");
+			//System.out.print("joinList size2:" + joinList.size() + "\n");
 			//SimpleJoin curJoin2 = new SimpleJoin(tableList.get(tableIndex), joinList.get(joinIndex),pred[0]);
 			//joinList.add(curJoin2);
 			Schema nSchema2 = Schema.join(tableList.get(tableIndex).getSchema(), schemaList.get(joinIndex));
@@ -251,7 +255,7 @@ class Select implements Plan {
 				if(canValidate == true){
 					SimpleJoin curJoin2 = new SimpleJoin(tableList.get(tableIndex), joinList.get(joinIndex),predList.get(i));
 					joinList.add(curJoin2); // the first join
-					System.out.print("joinList size2:" + joinList.size() + "\n");
+					//System.out.print("joinList size2:" + joinList.size() + "\n");
 					predList.remove(i);
 					joinSchema.add(nSchema2);
 					//joinList.add(curJoin2);
@@ -278,7 +282,7 @@ class Select implements Plan {
 	}
 	
 	if(predList.size() != 0){
-		System.out.print("predList not Empty at joins\n");
+		//System.out.print("predList not Empty at joins\n");
 		lastPredStart = "S";
 	}
 	//select from the join
@@ -290,13 +294,13 @@ class Select implements Plan {
 	int selCount;
 	boolean beginSel = false;
 	int prevSel = 0;
-	System.out.print("predList Size:" + predList.size() + "\n");
+	//System.out.print("predList Size:" + predList.size() + "\n");
 	for(int i = 0; i < predList.size(); i++){
 		if(beginSel == false){
 			//select using the last join
 			//System.out.print("joinList size:" + joinList.size() + "\n");
 			int joinSchemaLastIndex = joinSchema.size()-1;
-			System.out.println("Last index of join schema is " + joinSchemaLastIndex);
+			//System.out.println("Last index of join schema is " + joinSchemaLastIndex);
 			QueryCheck.predicates(joinSchema.get(joinSchemaLastIndex), pred);
 			if(tableList.size() != 1){
 				Selection tempSel = new Selection(joinList.get(joinList.size()-1),predList.get(i));
@@ -315,8 +319,8 @@ class Select implements Plan {
 			prevSel++;
 		}
 	}
-	System.out.print("selList size:" + selList.size() + "\n");
-	System.out.print("joinSchema size:" + joinSchema.size() + "\n");
+	//System.out.print("selList size:" + selList.size() + "\n");
+	//System.out.print("joinSchema size:" + joinSchema.size() + "\n");
 	//finally project with the last selection of the list
 	
 	for(int i = 0; i < cols.length; i++){
@@ -331,7 +335,7 @@ class Select implements Plan {
 		
 		this.fldnos = new Integer[lastSchemaFieldCount];
 		
-		System.out.println("Number of columns in the last schema is " + lastSchemaFieldCount);
+		//System.out.println("Number of columns in the last schema is " + lastSchemaFieldCount);
 		for(int i = 0; i < lastSchemaFieldCount; i++){
 			fldnos[i] = QueryCheck.columnExists(lastSchema, lastSchema.fieldName(i));
 		}
@@ -345,18 +349,18 @@ class Select implements Plan {
 	//no predicates to select from
 	else if(selList.size() == 0){
 		if(lastPredStart.equals("T")){
-			System.out.print("lastcheckpoint is T\n");
+			//System.out.print("lastcheckpoint is T\n");
 			this.root = new Projection(tableList.get(0),fldnos);
 		}
 		if(lastPredStart.equals("H")){
-			System.out.print("lastcheckpoint is H\n");
+			//System.out.print("lastcheckpoint is H\n");
 			this.root = new Projection(joinList.get(joinList.size() -1),fldnos);
 		}
 		
 	}
 	//select from multiple tables with given predicates
 	else{
-		System.out.print("projecting\n");
+		//System.out.print("projecting\n");
 		if(fldnos.length == 0){
 			this.root = selList.get(selList.size()-1);
 		}
@@ -384,25 +388,46 @@ class Select implements Plan {
 		  int selected = root.execute();
 		  System.out.print(selected  + " row(s) seleceted\n");
 	  }
-	  for(int i= 0; i < tableList.size(); i++){
-		  System.out.print("Closing tables\n");
+	  closeIterators();
+	  
+  } // public void execute()
+
+private void closeIterators() {
+	System.out.println("Close Iterators method reached.");
+	for(int i= 0; i < tableList.size(); i++){
 		  if(tableList.get(i).isOpen()){
+			  System.out.print("Closing Iterator\n");
 			  tableList.get(i).close();
 		  }
 	  }
 	  for(int i= 0; i < joinList.size(); i++){
-		  System.out.print("Closing tables\n");
 		  if(joinList.get(i).isOpen()){
+			  System.out.print("Closing Iterator\n");
 			  joinList.get(i).close();
 		  }
 	  }
 	  for(int i= 0; i < selList.size(); i++){
-		  System.out.print("Closing tables\n");
 		  if(selList.get(i).isOpen()){
+			  System.out.print("Closing Iterator\n");
 			  selList.get(i).close();
 		  }
 	  }
+	  for(int i= 0; i < tableJoinList.size(); i++){
+		  if(tableJoinList.get(i).isOpen()){
+			  System.out.print("Closing Iterator\n");
+			  tableJoinList.get(i).close();
+		  }
+	  }
 	  
-  } // public void execute()
+	  if (tempFileScan.isOpen()){
+		  System.out.print("Closing Iterator\n");
+		  tempFileScan.close();
+	  }
+	  
+	  if (root.isOpen()){
+		  System.out.print("Closing Iterator\n");
+		  root.close();
+	  }
+}
 
 } // class Select implements Plan
