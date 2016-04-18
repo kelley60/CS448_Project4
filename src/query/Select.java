@@ -237,7 +237,8 @@ class Select implements Plan {
    */
   public void execute() {
     // print the output message
-	  root.execute();
+	   int selected = root.execute();
+	  System.out.print(selected  + " row(s) seleceted\n");
     
   } // public void execute()
 
