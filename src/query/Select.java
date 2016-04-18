@@ -49,8 +49,46 @@ class Select implements Plan {
 	  }
 	  
 	 this.lastPredStart = "T";
-	String[] tables = tree.getTables(); 
-	//THIS AS WELL
+	String[] tables = tree.getTables();
+	ArrayList<Integer> tableSizes = new ArrayList<Integer>(); 
+	ArrayList<String> tableNames = new ArrayList<String>(); 
+	
+	//get the sizes of the tables
+	for(int i = 0; i < tables.length; i++){
+		HeapFile file = new HeapFile(tables[i]);
+		tableSizes.add(file.getRecCnt());
+		tableNames.add(tables[i]);
+	}
+	
+	//sort the tables by size so that the smaller ones come first
+	boolean isSorted = false;
+	while(!isSorted){
+		for(int i = 0; i < tableNames.size() - 1; i++){
+			int curTable = i;
+			int nextTable = i+1;
+			if(tableSizes.get(curTable) > tableSizes.get(nextTable)){
+				//switch positions
+				int size1 = tableSizes.get(curTable);
+				int size2 = tableSizes.get(nextTable);
+				String name1 = tableNames.get(curTable);
+				String name2 = tableNames.get(curTable);
+				tableSizes.set(curTable, size2);
+				tableSizes.set(nextTable, size1);
+				tableNames.set(curTable, name2);
+				tableNames.set(nextTable, name1);
+			}
+		}
+		boolean checkSort = true;
+		for(int i = 0; i < tableSizes.size() - 1; i++){
+			if(tableSizes.get(i) > tableSizes.get(i + 1)){
+				checkSort = false;
+			}
+		}
+		if(checkSort = true){
+			isSorted = true;
+		}
+	}
+	System.out.print("Sorting outputs:" + tableSizes.toString() + "\n");
 	Predicate[][] pred = tree.getPredicates();
 	
 	//
